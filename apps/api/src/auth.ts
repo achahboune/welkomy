@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth/minimal";
+import type { Env } from "./index";
 
 export function createAuth(env: Env) {
   return betterAuth({
