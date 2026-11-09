@@ -37,7 +37,7 @@ Do not commit `.dev.vars`.
 2. Apply the migration to the local Wrangler D1 database only:
 
 ```cmd
-npx wrangler d1 migrations apply welkomy-db --local
+npx wrangler d1 migrations apply welkomy-db --local --config apps/api/wrangler.toml
 ```
 
 This does not modify the remote Cloudflare database.
@@ -72,13 +72,13 @@ Use HTTPS and preferably put the frontend and API on subdomains of the same cust
 Only after checking the Cloudflare account and the D1 database ID, apply the migration remotely:
 
 ```cmd
-npx wrangler d1 migrations apply welkomy-db --remote
+npx wrangler d1 migrations apply welkomy-db --remote --config apps/api/wrangler.toml
 ```
 
 Then deploy the Worker:
 
 ```cmd
-npx wrangler deploy
+npx wrangler deploy --config apps/api/wrangler.toml
 ```
 
 Deploy the frontend separately to Cloudflare Pages with the correct API URL if it is not served through the same origin.
