@@ -5,7 +5,7 @@ compatibility_date = "2026-11-09"
 [[d1_databases]]
 binding = "DB"
 database_name = "welkomy-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "cfcfc69d-b718-4deb-a236-26447b4357cb"
 migrations_dir = "migrations"
 
 [vars]
