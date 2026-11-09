@@ -4,7 +4,7 @@ import { BookOpen, Building2, Copy, LogOut, Plus, QrCode, Save, Trash2, X } from
 type Property = { id: string; name: string; location: string; guests: number; status: "Published" | "Draft"; accent?: string; slug: string };
 type Guide = { wifi: string; checkin: string; checkout: string; access: string; emergency: string; notes: string };
 const blankGuide: Guide = { wifi: "", checkin: "", checkout: "", access: "", emergency: "", notes: "" };
-const API = "";
+const API = import.meta.env.VITE_API_URL || "";
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(API + path, {
