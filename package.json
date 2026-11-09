@@ -6,8 +6,9 @@
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "npm run dev --workspace @welkomy/web",
-    "build": "npm run build --workspace @welkomy/web",
+    "dev:api": "npm run dev --workspace @welkomy/api",
+    "build": "npm run typecheck && npm run build --workspace @welkomy/web",
     "test": "npm run test --workspace @welkomy/web",
-    "typecheck": "npm run typecheck --workspace @welkomy/web"
+    "typecheck": "npm run typecheck --workspace @welkomy/web && npm run typecheck --workspace @welkomy/api"
   }
 }
