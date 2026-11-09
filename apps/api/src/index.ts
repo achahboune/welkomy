@@ -1,18 +1,20 @@
 import { Hono } from "hono";
-
-export interface Env {
-  DB: D1Database;
-  ENVIRONMENT?: string;
-}
-
-const app = new Hono<{ Bindings: Env }>();
-
-app.get("/api/health", (c) => c.json({
-  status: "ok",
-  service: "welkomy-api",
-  environment: c.env.ENVIRONMENT ?? "development",
-}));
-
-app.notFound((c) => c.json({ error: "Not found" }, 404));
-
+import { createAuth } from "./auth";
+export interface Env { DB:D1Database; ASSETS:Fetcher; ENVIRONMENT?:string; BETTER_AUTH_SECRET:string; BETTER_AUTH_URL:string; APP_ORIGIN:string; }
+type Variables={userId:string;tenantId:string;userName:string};
+const app=new Hono<{Bindings:Env;Variables:Variables}>();
+app.get("/api/health",c=>c.json({status:"ok",service:"welkomy",environment:c.env.ENVIRONMENT??"production"}));
+app.all("/api/auth/*",c=>createAuth(c.env).handler(c.req.raw));
+app.use("/api/*",async(c,next)=>{if(c.req.path.startsWith("/api/auth/")||c.req.path==="/api/health")return next();const s=await createAuth(c.env).api.getSession({headers:c.req.raw.headers});if(!s?.user)return c.json({error:"Authentication required"},401);const u=s.user;await c.env.DB.prepare("INSERT OR IGNORE INTO tenants(id,name) VALUES(?,?)").bind(u.id,u.name||u.email).run();await c.env.DB.prepare("INSERT OR IGNORE INTO users(id,tenant_id,email,display_name,role) VALUES(?,?,?,?, 'owner')").bind(u.id,u.id,u.email,u.name||null).run();c.set("userId",u.id);c.set("tenantId",u.id);c.set("userName",u.name||u.email);await next();});
+app.get("/api/me",c=>c.json({id:c.get("userId"),name:c.get("userName")}));
+app.get("/api/properties",async c=>{const {results}=await c.env.DB.prepare("SELECT id,name,slug,address,city,country,max_guests,status,created_at,updated_at FROM properties WHERE tenant_id=? ORDER BY created_at DESC").bind(c.get("tenantId")).all();return c.json({properties:results});});
+app.post("/api/properties",async c=>{const b=await c.req.json<{name?:string;address?:string;city?:string;country?:string;maxGuests?:number}>(),name=b.name?.trim(),guests=Number(b.maxGuests??1);if(!name||name.length>100||!Number.isInteger(guests)||guests<1||guests>1000)return c.json({error:"Invalid property details"},400);const id=crypto.randomUUID(),slug=name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")+"-"+id.slice(0,8),t=c.get("tenantId");await c.env.DB.batch([c.env.DB.prepare("INSERT INTO properties(id,tenant_id,name,slug,address,city,country,max_guests) VALUES(?,?,?,?,?,?,?,?)").bind(id,t,name,slug,b.address?.trim()||null,b.city?.trim()||null,b.country?.trim()||null,guests),c.env.DB.prepare("INSERT INTO guides(id,tenant_id,property_id) VALUES(?,?,?)").bind(crypto.randomUUID(),t,id)]);return c.json({id,slug,name},201);});
+app.put("/api/properties/:id",async c=>{const b=await c.req.json<{name?:string;address?:string;city?:string;country?:string;maxGuests?:number}>(),n=b.name?.trim(),g=Number(b.maxGuests??1);if(!n||n.length>100||!Number.isInteger(g)||g<1||g>1000)return c.json({error:"Invalid property details"},400);const r=await c.env.DB.prepare("UPDATE properties SET name=?,address=?,city=?,country=?,max_guests=?,updated_at=datetime('now') WHERE id=? AND tenant_id=?").bind(n,b.address?.trim()||null,b.city?.trim()||null,b.country?.trim()||null,g,c.req.param("id"),c.get("tenantId")).run();return r.meta.changes?c.json({success:true}):c.json({error:"Property not found"},404);});
+app.delete("/api/properties/:id",async c=>{const r=await c.env.DB.prepare("DELETE FROM properties WHERE id=? AND tenant_id=?").bind(c.req.param("id"),c.get("tenantId")).run();return r.meta.changes?c.json({success:true}):c.json({error:"Property not found"},404);});
+app.get("/api/properties/:id/guide",async c=>{const g=await c.env.DB.prepare("SELECT g.id,g.default_language,g.published_at,p.name,p.slug FROM guides g JOIN properties p ON p.id=g.property_id WHERE p.id=? AND p.tenant_id=?").bind(c.req.param("id"),c.get("tenantId")).first<{id:string;default_language:string;published_at:string|null;name:string;slug:string}>();if(!g)return c.json({error:"Guide not found"},404);const {results}=await c.env.DB.prepare("SELECT id,section_type,language,title,content,sort_order,is_visible FROM guide_sections WHERE guide_id=? AND tenant_id=? ORDER BY sort_order").bind(g.id,c.get("tenantId")).all();return c.json({guide:g,sections:results});});
+app.put("/api/properties/:id/guide",async c=>{const b=await c.req.json<{language?:string;sections?:Array<{type:string;language:string;title:string;content:string;visible?:boolean;order?:number}>}>(),t=c.get("tenantId"),g=await c.env.DB.prepare("SELECT g.id FROM guides g JOIN properties p ON p.id=g.property_id WHERE p.id=? AND p.tenant_id=?").bind(c.req.param("id"),t).first<{id:string}>();if(!g)return c.json({error:"Guide not found"},404);const types=["welcome","wifi","checkin","checkout","access","emergency","recommendations","custom"],ss=(b.sections||[]).filter(s=>types.includes(s.type)&&["en","fr","ar"].includes(s.language)&&s.title?.trim()&&typeof s.content==="string").slice(0,40),q=[c.env.DB.prepare("UPDATE guides SET default_language=?,updated_at=datetime('now') WHERE id=? AND tenant_id=?").bind(["en","fr","ar"].includes(b.language||"")?b.language:"en",g.id,t),c.env.DB.prepare("DELETE FROM guide_sections WHERE guide_id=? AND tenant_id=?").bind(g.id,t)];ss.forEach((s,i)=>q.push(c.env.DB.prepare("INSERT INTO guide_sections(id,tenant_id,guide_id,section_type,language,title,content,sort_order,is_visible) VALUES(?,?,?,?,?,?,?,?,?)").bind(crypto.randomUUID(),t,g.id,s.type,s.language,s.title.trim().slice(0,120),s.content.slice(0,5000),s.order??i,s.visible===false?0:1)));await c.env.DB.batch(q);return c.json({success:true,savedSections:ss.length});});
+app.post("/api/properties/:id/publish",async c=>{const id=c.req.param("id"),t=c.get("tenantId"),r=await c.env.DB.prepare("UPDATE properties SET status='published',updated_at=datetime('now') WHERE id=? AND tenant_id=?").bind(id,t).run();if(!r.meta.changes)return c.json({error:"Property not found"},404);await c.env.DB.prepare("UPDATE guides SET published_at=datetime('now'),updated_at=datetime('now') WHERE property_id=? AND tenant_id=?").bind(id,t).run();const p=await c.env.DB.prepare("SELECT slug FROM properties WHERE id=?").bind(id).first<{slug:string}>();return c.json({success:true,url:"/g/"+p?.slug});});
+app.get("/api/public/guides/:slug",async c=>{const p=await c.env.DB.prepare("SELECT p.id,p.name,p.city,p.country,p.max_guests,g.id AS guide_id,g.default_language FROM properties p JOIN guides g ON g.property_id=p.id WHERE p.slug=? AND p.status='published' AND g.published_at IS NOT NULL").bind(c.req.param("slug")).first<Record<string,unknown>>();if(!p)return c.json({error:"Guide not found"},404);const {results}=await c.env.DB.prepare("SELECT section_type,language,title,content FROM guide_sections WHERE guide_id=? AND is_visible=1 ORDER BY sort_order").bind(p.guide_id).all();return c.json({property:p,sections:results});});
+app.notFound(c=>c.req.path.startsWith("/api/")?c.json({error:"Not found"},404):c.env.ASSETS.fetch(c.req.raw));
+app.onError((e,c)=>{console.error(e);return c.json({error:"Internal server error"},500);});
 export default app;
