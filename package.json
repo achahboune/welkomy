@@ -1,0 +1,13 @@
+{
+  "name": "welkomy",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "npm run dev --workspace @welkomy/web",
+    "build": "npm run build --workspace @welkomy/web",
+    "test": "npm run test --workspace @welkomy/web",
+    "typecheck": "npm run typecheck --workspace @welkomy/web"
+  }
+}
