@@ -23,6 +23,13 @@ function createAuth(env: Env) {
     trustedOrigins: [env.APP_ORIGIN],
     emailAndPassword: { enabled: true, requireEmailVerification: false },
     session: { expiresIn: 60 * 60 * 24 * 7, updateAge: 60 * 60 * 24 },
+    advanced: {
+      defaultCookieAttributes: {
+        sameSite: env.ENVIRONMENT === "production" ? "none" : "lax",
+        secure: env.ENVIRONMENT === "production",
+        httpOnly: true,
+      },
+    },
   });
 }
 
