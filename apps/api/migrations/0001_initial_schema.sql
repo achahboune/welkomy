@@ -2,7 +2,7 @@ PRAGMA foreign_keys = ON;
 
 CREATE TABLE user (
   id TEXT PRIMARY KEY NOT NULL,
-  name TIMESTAMP NOT NULL,
+  name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE COLLATE NOCASE,
   emailVerified BOOLEAN NOT NULL DEFAULT FALSE,
   image TEXT,
@@ -24,8 +24,8 @@ CREATE INDEX session_userId_idx ON session(userId);
 
 CREATE TABLE account (
   id TEXT PRIMARY KEY NOT NULL,
-  accountId TIMESTAMP NOT NULL,
-  providerId TIMESTAMP NOT NULL,
+  accountId TEXT NOT NULL,
+  providerId TEXT NOT NULL,
   userId TEXT NOT NULL REFERENCES user(id) ON DELETE CASCADE,
   accessToken TEXT,
   refreshToken TEXT,
@@ -41,8 +41,8 @@ CREATE INDEX account_userId_idx ON account(userId);
 
 CREATE TABLE verification (
   id TEXT PRIMARY KEY NOT NULL,
-  identifier TIMESTAMP NOT NULL,
-  value TIMESTAMP NOT NULL,
+  identifier TEXT NOT NULL,
+  value TEXT NOT NULL,
   expiresAt TIMESTAMP NOT NULL,
   createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -52,8 +52,8 @@ CREATE INDEX verification_identifier_idx ON verification(identifier);
 CREATE TABLE properties (
   id TEXT PRIMARY KEY NOT NULL,
   user_id TEXT NOT NULL REFERENCES user(id) ON DELETE CASCADE,
-  name TIMESTAMP NOT NULL,
-  location TIMESTAMP NOT NULL,
+  name TEXT NOT NULL,
+  location TEXT NOT NULL,
   guests INTEGER NOT NULL DEFAULT 2 CHECK (guests BETWEEN 1 AND 1000),
   status TEXT NOT NULL DEFAULT 'Draft' CHECK (status IN ('Draft', 'Published')),
   accent TEXT NOT NULL DEFAULT 'blue',
