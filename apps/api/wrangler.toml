@@ -1,0 +1,12 @@
+name = "welkomy-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-30"
+
+[vars]
+ENVIRONMENT = "development"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "welkomy-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+migrations_dir = "migrations"
