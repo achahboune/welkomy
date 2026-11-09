@@ -9,7 +9,9 @@ export interface Env {
   APP_ORIGIN: string;
 }
 
-const app = new Hono<{ Bindings: Env }>();
+type AppEnv = { Bindings: Env; Variables: { userId: string } };
+
+const app = new Hono<AppEnv>();
 
 function createAuth(env: Env) {
   if (!env.BETTER_AUTH_SECRET || env.BETTER_AUTH_SECRET.length < 32) {
