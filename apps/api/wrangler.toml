@@ -1,12 +1,17 @@
-name = "welkomy-api"
+name = "welkomy"
 main = "src/index.ts"
-compatibility_date = "2024-12-30"
-
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
 [vars]
-ENVIRONMENT = "development"
-
+ENVIRONMENT = "production"
+BETTER_AUTH_URL = "https://welkomy.achahboune.workers.dev"
+APP_ORIGIN = "https://welkomy.achahboune.workers.dev"
 [[d1_databases]]
 binding = "DB"
 database_name = "welkomy-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "cfcfc69d-b718-4deb-a236-26447b4357cb"
 migrations_dir = "migrations"
+[assets]
+directory = "../web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
