@@ -10,5 +10,8 @@ migrations_dir = "migrations"
 
 [vars]
 ENVIRONMENT = "development"
-BETTER_AUTH_URL = "http://localhost:8787"
+BETTER_AUTH_URL = "http://127.0.0.1:8789"
 APP_ORIGIN = "http://localhost:5173"
+
+[dev]
+port = 8789
