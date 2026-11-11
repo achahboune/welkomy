@@ -1,12 +1,17 @@
 name = "welkomy-api"
 main = "src/index.ts"
-compatibility_date = "2024-12-30"
-
-[vars]
-ENVIRONMENT = "development"
+compatibility_date = "2026-11-09"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "welkomy-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "cfcfc69d-b718-4deb-a236-26447b4357cb"
 migrations_dir = "migrations"
+
+[vars]
+ENVIRONMENT = "development"
+BETTER_AUTH_URL = "http://127.0.0.1:8789"
+APP_ORIGIN = "http://localhost:5173"
+
+[dev]
+port = 8789
